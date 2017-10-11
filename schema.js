@@ -3,11 +3,7 @@ const util = require('util');
 const parseXML = util.promisify(require('xml2js').parseString);
 const { GraphQLObjectType, GraphQLSchema, GraphQLInt, GraphQLString } = require('graphql');
 
-// fetch(
-//   'https://www.goodreads.com/author/show.xml?id=42&key=llfMRuSMR9H18bgf4pNrA'
-// )
-// .then(response => response.text())
-// .then(parseXML);
+
 
 const AuthorType = new GraphQLObjectType({
   name: 'Author',
@@ -15,7 +11,9 @@ const AuthorType = new GraphQLObjectType({
 
   fields: () => ({
     name: {
-      type: GraphQLString
+      type: GraphQLString,
+      resolve: xml =>
+      xml.GoodreadsResponse.author[0].name[0]
     }
   })
 })
@@ -29,11 +27,14 @@ module.exports = new GraphQLSchema({
       author: {
         type: AuthorType,
         args: {
-          id: {
-            type: GraphQLInt
-          }
+          id: { type: GraphQLInt }
+          },
+          resolve: (root, args) => fetch(
+            `https://www.goodreads.com/author/show.xml?id=${args.id}&key=llfMRuSMR9H18bgf4pNrA`
+          )
+          .then(response => response.text())
+          .then(parseXML)
         }
-      }
     })
   })
 })
